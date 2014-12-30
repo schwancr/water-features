@@ -3,7 +3,7 @@ from .base import BaseTransformer
 import mdtraj as md
 from .utils import get_square_distances
 from .utils import get_neighbors
-from .features import FeatureTrajectory
+from . import FeatureTrajectory
 import copy
 
 class OO(BaseTransformer):

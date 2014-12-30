@@ -1,4 +1,5 @@
 
+from feature_trajectory import FeatureTrajectory
 from .OO import OO
 from .OOneighbors import OOneighbors
 

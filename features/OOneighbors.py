@@ -2,7 +2,7 @@ import numpy as np
 import mdtraj as md
 from .base import BaseTransformer
 from .utils import get_square_distances, get_neighbors
-from .features import FeatureTrajectory
+from . import FeatureTrajectory
 import copy
 
 
