@@ -1,4 +1,3 @@
-
 import numpy as np
 
 class FeatureTrajectory(object):
@@ -19,6 +18,17 @@ class FeatureTrajectory(object):
 
         self.features = features
         self.neighbors = neighbors
+
+
+    def __getitem__(self, slice):
+        if isinstance(slice, int):
+            features = np.array([self.features[slice]])
+            neighbors = [self.neighbors[slice]]
+        else:
+            features = self.features[slice]
+            neighbors = [self.neighbors[i] for i in slice]
+
+        return FeatureTrajectory(features, neighbors)
 
 
     @property

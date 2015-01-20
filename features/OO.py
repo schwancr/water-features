@@ -25,7 +25,18 @@ class OO(BaseTransformer):
         self.cutoff = float(cutoff)
 
 
-    def transform(self, traj):
+    def fit(self, trajs):
+        return self
+
+    
+    def transform(self, trajs):
+        result = []
+        for traj in trajs:
+            result.append(self._transform_one(traj))
+        return result
+
+
+    def _transform_one(self, traj):
         """
         Transform a trajectory into the OO features
 
@@ -44,6 +55,9 @@ class OO(BaseTransformer):
 
         distances = get_square_distances(traj, oxygens)
         neighbors = get_neighbors(distances, cutoff=self.cutoff)
+
+        Xnew = copy.copy(distances)
+        Xnew.sort(axis=2)
 
         if self.n_waters is None:
             Xnew = Xnew[:, :, 1:]

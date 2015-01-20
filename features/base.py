@@ -1,7 +1,7 @@
 
 import multiprocessing as mp
 from sklearn.base import BaseEstimator, TransformerMixin
-from .featurs import FeatureTrajectory
+from . import FeatureTrajectory
 import numpy as np
 
 
