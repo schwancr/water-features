@@ -1,7 +1,9 @@
 
 from feature_trajectory import FeatureTrajectory
 from .OO import OO
+from .OOH import OOH
 from .OOneighbors import OOneighbors
+from .secondorder import SecondOrder
 
 #from .OH import OH
 #from .OHHO import OHHO

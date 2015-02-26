@@ -23,7 +23,8 @@ class SecondOrder(BaseTransformer):
             - global: sort the second order distances in order by
                 increasing distance. I think this is a bad idea
     """
-    def __init__(self, n_waters=None, sort='local', cutoff=0.45):
+    def __init__(self, n_waters=None, sort='local', cutoff=0.45,
+                 zscore=True):
 
         if n_waters is None:
             self.n_waters = None
@@ -39,16 +40,7 @@ class SecondOrder(BaseTransformer):
 
         self.cutoff = float(cutoff)
     
-
-    def fit(self, trajs):
-        return self
-
-
-    def transform(self, trajs):
-        result = []
-        for traj in trajs:
-            result.append(self._transform_one(traj))
-        return result
+        super(SecondOrder, self).__init__(zscore=zscore)
 
 
     def _transform_one(self, traj):

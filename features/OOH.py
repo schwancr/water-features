@@ -30,7 +30,7 @@ class OOH(BaseTransformer):
                 disassociated from their water atom 
     """
     def __init__(self, n_waters=None, sortH='local', 
-                 remove_selfH=True, cutoff=0.45):
+                 remove_selfH=True, cutoff=0.45, zscore=True):
 
         if n_waters is None:
             self.n_waters = n_waters
@@ -48,16 +48,7 @@ class OOH(BaseTransformer):
 
         self.cutoff = float(cutoff)
 
-
-    def fit(self, trajs):
-        return self
-
-
-    def transform(self, trajs):
-        result = []
-        for traj in trajs:
-            result.append(self._transform_one(traj))
-        return result
+        super(OOH, self).__init__(zscore=zscore)
 
 
     def _transform_one(self, traj):

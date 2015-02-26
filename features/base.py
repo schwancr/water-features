@@ -16,30 +16,43 @@ class BaseTransformer(BaseEstimator, TransformerMixin):
     Base featurizer for turning simulations into vectors.
 
     """
-    def transform(self, traj):
-        pass
+    def __init__(self, zscore=True):
+        self.zscore = zscore
+        self.means_ = None
+        self.stds_ = None
 
 
-    def parallel_transform(self, traj, n_procs=1):
-        """
-        Use multiprocessing to transform in parallel
-        """
+    def fit(self, trajs, y=None):
+        return self
+
+
+    def transform(self, trajs):
+        result = []
+        for traj in trajs:
+            result.append(self._transform_one(traj))
+
+        if self.zscore:
+            if self.means_ is None:
+                self.set_zscore(result)
+
+            result = self.apply_zscore(result)
+
+        return result
+
+
+    def set_zscore(self, X):
+        features = np.concatenate([np.concatenate(f.features) for f in X])
         
-        pool = mp.Pool(n_procs)
+        self.means_ = features.mean(0)
+        self.stds_ = features.std(0)
 
-        try:
-            result = pool.map_async(help_me_transform, 
-                                    ((self, traj[i]) for i in xrange(traj.n_frames)))
-            results = result.get()
 
-        except KeyboardInterrupt:
-            raise 
+    def apply_zscore(self, Xs):
+        Zs = []
+        for X in Xs:
+            Z = X
+            Z.features -= self.means_.reshape((1, 1, -1))
+            Z.features /= self.stds_.reshape((1, 1, -1))
+            Zs.append(Z)
 
-        except Exception as err:
-            print err.message
-
-        feats = results[0]
-        for i in xrange(1, len(results)):
-            feats += results[i]
-
-        return feats
+        return Zs

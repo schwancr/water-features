@@ -31,6 +31,10 @@ class FeatureTrajectory(object):
         return FeatureTrajectory(features, neighbors)
 
 
+    def __len__(self):
+        return self.n_frames
+
+
     @property
     def n_frames(self):
         return self.features.shape[0]
