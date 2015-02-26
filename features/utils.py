@@ -1,10 +1,42 @@
 import mdtraj as md
 import numpy as np
 
+def get_square_displacements(traj, aind=None):
+    """
+    The atom displacements for a subset of the atoms in a
+    trajectory. Return it as a 3-d matrix: [n_atoms, n_atoms, 3]
+
+    Parameters
+    ----------
+    traj : mdtraj.Trajectory
+        trajectory object
+    aind : np.ndarray, optional
+        distances between the atoms in aind
+
+    Returns
+    -------
+    displacements : np.ndarray, 
+                    shape = [traj.n_frames, aind.shape[0], aind.shape[0], 3]
+        displacements between thea toms in aind
+    """
+    if aind is None:
+        aind = np.arange(traj.n_atoms)
+
+    pairs_ind = np.array([(i, j) for i in xrange(len(aind)) for j in xrange(i + 1, len(aind))])
+    pairs = np.array([(aind[i], aind[j]) for i, j in pairs_ind])
+
+    displacements = md.compute_displacements(traj, pairs)
+    displacements = np.array([md.geometry.squareform(displacements[:, :, i], pairs_ind) for i in xrange(3)])
+    displacements = displacements.transpose((1, 2, 3, 0))
+    # displacements is now shaped like we want it
+    
+    return displacements
+
+
 def get_square_distances(traj, aind=None):
     """
-    The the atom distances in for a subset of a trajectory and 
-    return it as a square distance matrix
+    The atom distances in for a subset of the atoms in
+    a trajectory and return it as a square distance matrix
 
     Parameters
     ----------
