@@ -17,7 +17,7 @@ class Vectors(BaseTransformer):
         Limit the feature vectors to the closest n_waters. If None, 
         then all waters are included.
     """
-    def __init__(self, n_waters=None, cutoff=0.45):
+    def __init__(self, n_waters=None, cutoff=0.45, zscore=False):
         if n_waters is None:
             self.n_waters = n_waters
         else:
@@ -25,8 +25,10 @@ class Vectors(BaseTransformer):
 
         self.cutoff = float(cutoff)
 
+        super(Vectors, self).__init__(zscore=zscore)
 
-    def fit(self, trajs):
+
+    def fit(self, trajs, y=None):
         return self
 
     
@@ -52,6 +54,7 @@ class Vectors(BaseTransformer):
         distances : np.ndarray
             distances between each water molecule
         """
+        raise Exception("This is nonsense. You don't want to use this representation.. I screwed it up")
         oxygens = np.array([i for i in xrange(traj.n_atoms) if traj.top.atom(i).element.symbol == 'O'])
         hydrogens = np.array([[a.index for a in traj.top.atom(i).residue.atoms if a.element.symbol == 'H'] for i in oxygens])
 
@@ -130,7 +133,7 @@ class Vectors(BaseTransformer):
         OOdisplacements = get_square_displacements(traj, oxygens)
         OOdistances = np.sqrt(np.square(OOdisplacements).sum(3))
 
-        rotated_OOdisplacements = np.einsum('...de,...e', rot_mats, vectors)
+        rotated_OOdisplacements = np.einsum('...de,...ce', rot_mats, vectors)
 
         neighbors = get_neighbors(OOdistances, cutoff=self.cutoff)
 
