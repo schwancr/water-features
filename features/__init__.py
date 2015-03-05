@@ -4,7 +4,8 @@ from .OO import OO
 from .OOH import OOH
 from .OOneighbors import OOneighbors
 from .secondorder import SecondOrder
-from .vectors import Vectors
+#from .vectors import Vectors
+from .spherical import SphericalHarmonics
 
 #from .OH import OH
 #from .OHHO import OHHO
