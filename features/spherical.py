@@ -131,7 +131,7 @@ class SphericalHarmonics(BaseTransformer):
         for l in xrange(self.n_harmonics):
             for m in xrange(-l, l + 1):
                 print "Working on l=%d, m=%d" % (l, m)
-                Xnew.append(scipy.special.sph_harm(m, l, X_azim, X_polar).sum(axis=-1, keepdims=True))
+                Xnew.append(np.abs(scipy.special.sph_harm(m, l, X_azim, X_polar).sum(axis=-1, keepdims=True)))
         Xnew = np.dstack(Xnew)
 
         return FeatureTrajectory(Xnew, neighbors)
