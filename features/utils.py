@@ -23,12 +23,16 @@ def get_square_displacements(traj, aind=None):
         aind = np.arange(traj.n_atoms)
 
     pairs_ind = np.array([(i, j) for i in xrange(len(aind)) for j in xrange(i + 1, len(aind))])
-    pairs = np.array([(aind[i], aind[j]) for i, j in pairs_ind])
+    pairs = np.array([(aind[i], aind[j]) for i, j in pairs_ind]).astype(np.int32)
 
     displacements = md.compute_displacements(traj, pairs)
     displacements = np.array([md.geometry.squareform(displacements[:, :, i], pairs_ind) for i in xrange(3)])
+
     displacements = displacements.transpose((1, 2, 3, 0))
     # displacements is now shaped like we want it
+
+    for i in xrange(displacements.shape[1]):
+        displacements[:, i, :i, :] *= -1
     
     return displacements
 

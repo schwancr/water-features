@@ -6,6 +6,7 @@ from .OOneighbors import OOneighbors
 from .secondorder import SecondOrder
 #from .vectors import Vectors
 from .spherical import SphericalHarmonics
+from .coordination import Coordination
 
 #from .OH import OH
 #from .OHHO import OHHO

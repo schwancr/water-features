@@ -18,7 +18,7 @@ class SphericalHarmonics(BaseTransformer):
         Limit the feature vectors to the closest n_waters. If None, 
         then all waters are included.
     """
-    def __init__(self, n_waters=None, cutoff=0.45, n_harmonics=10,
+    def __init__(self, n_waters=None, cutoff=0.45, harmonics=10,
                  zscore=False):
         if n_waters is None:
             self.n_waters = n_waters
@@ -26,20 +26,13 @@ class SphericalHarmonics(BaseTransformer):
             self.n_waters = int(n_waters)
 
         self.cutoff = float(cutoff)
-        self.n_harmonics = int(n_harmonics)
+
+        if isinstance(harmonics, list):
+            self.harmonics = harmonics
+        else:
+            self.harmonics = range(int(harmonics))
 
         super(self.__class__, self).__init__(zscore=zscore)
-
-
-    def fit(self, trajs, y=None):
-        return self
-
-    
-    def transform(self, trajs):
-        result = []
-        for traj in trajs:
-            result.append(self._transform_one(traj))
-        return result
 
 
     def _transform_one(self, traj):
@@ -82,8 +75,8 @@ class SphericalHarmonics(BaseTransformer):
         # I have to normalize it now
         HH_vectors = HH_vectors / np.sqrt(np.square(HH_vectors).sum(2, keepdims=True))
         
-        HO_vectors = HO_vectors.reshape((traj.n_frames, 1, len(oxygens), 3))
-        HH_vectors = HH_vectors.reshape((traj.n_frames, 1, len(oxygens), 3))
+        HO_vectors = HO_vectors.reshape((traj.n_frames, len(oxygens), 1, 3))
+        HH_vectors = HH_vectors.reshape((traj.n_frames, len(oxygens), 1, 3))
         # I need to add an axis so that these vectors are broadcast to every water in 
         # the row of the displacement matrix
 
@@ -97,26 +90,39 @@ class SphericalHarmonics(BaseTransformer):
         # normalize to make the angle calculation just a dot product
 
         # The polar angle is just the angle to the z-axis:
-        # I should find out if np.einsum is faster than is operation
-        polar_angle = (HO_vectors * OOdisplacements).sum(3, keepdims=True) # we'll squeeze this last row later
+        # I should find out if np.einsum is faster than this operation
+        # actually, the sph_harm stuff is the slow step, so I'd rather 
+        # leave this in a more readible format
+        polar_comp = (HO_vectors * OOdisplacements).sum(3, keepdims=True) # we'll squeeze this last row later
 
         # Now, the azimuthal angle is a bit harder, because it's the angle of the displacement
         # projcted onto the XY plane
 
         # first, subtract out the z-component and normalize again
-        XY_displacements = OOdisplacements - polar_angle * HO_vectors
+        XY_displacements = OOdisplacements - polar_comp * HO_vectors
         XY_displacements = XY_displacements / np.sqrt(np.square(XY_displacements).sum(axis=3, keepdims=True))
 
-        polar_angle = polar_angle[:, :, :, 0]  # we kept the dims before in order
-                                               # to broadcast correctly.
+        polar_angle = np.arccos(polar_comp[:, :, :, 0])  
+        # we kept the dims before in order to broadcast correctly.
 
         # now, take the dot product with the HH_vectors:
-        azim_angle = (HH_vectors * XY_displacements).sum(3)
+        #azim_comp = np.abs((HH_vectors * XY_displacements).sum(3))
+        # ^^^ so I'm already screwed b/c I'm not figuring out whether
+        # the angle is in [0, pi] or [pi, 2pi], so I might as well just
+        # only describe the angle in the first quadrant. 
+        # I have no idea if this is the right thing to do or not, but 
+        # it might be. How does limiting my points to the same quadrant
+        # affect the spherical harmonics stuff?
+        # Actually, I think this is wrong, since most of the spherical
+        # harmonics lack this symmetry. I don't know how to account for
+        # all of the symmetries that water has. It seems like these
+        # spherical harmonics just simply don't work.
+        azim_comp = (HH_vectors * XY_displacements).sum(3)
+        azim_angle = np.arccos(azim_comp)
 
         # ok, so now [azim,polar]_angle is shaped [n_frames, n_waters, n_waters]
         # and [azim,polar]_angle[t, i, j] is the [azim,polar] angle of the vector
         # between water i and water j at time t, in water i's molecular frame
-        
         neighbors = get_neighbors(OOdistances, cutoff=self.cutoff)
 
         frames = np.arange(traj.n_frames).reshape((-1, 1, 1))
@@ -128,10 +134,12 @@ class SphericalHarmonics(BaseTransformer):
         X_polar = polar_angle[frames, waters, OO_sorted_ind]
 
         Xnew = [OOdistances[frames, waters, OO_sorted_ind]]
-        for l in xrange(self.n_harmonics):
+        for l in self.harmonics:
             for m in xrange(-l, l + 1):
                 print "Working on l=%d, m=%d" % (l, m)
-                Xnew.append(np.abs(scipy.special.sph_harm(m, l, X_azim, X_polar).sum(axis=-1, keepdims=True)))
-        Xnew = np.dstack(Xnew)
+                qlm = scipy.special.sph_harm(m, l, X_azim, X_polar).sum(axis=2, keepdims=True) / 4
+                #Xnew.append(np.sqrt(temp.sum(axis=2, keepdims=True)))
+                Xnew.append(qlm)
 
+        Xnew = np.dstack(Xnew)
         return FeatureTrajectory(Xnew, neighbors)
